@@ -36,7 +36,7 @@ def add_features(df: pd.DataFrame) -> pd.DataFrame:
 
 if __name__ == "__main__":
     # Quick manual test — point this at your actual CSV once you have it.
-    DATA_PATH = "../data/primary_dataset.csv"
+    DATA_PATH = "bot_detection_data/bot_detection_data.csv"
 
     df = pd.read_csv(DATA_PATH)
     print("Before:", df.shape, "columns:", list(df.columns))
