@@ -19,13 +19,13 @@ import pandas as pd
 def add_features(df: pd.DataFrame) -> pd.DataFrame:
     df = df.copy()
 
-    # --- Feature 1: account age in days ---
+    # feature 1: account age in days 
     df["Created At"] = pd.to_datetime(df["Created At"], errors="coerce")
     reference_date = df["Created At"].max()
     df["account_age_days"] = (reference_date - df["Created At"]).dt.days
 
-    # --- Feature 2: retweet-to-follower ratio ---
-    # Replace 0 followers with NA so we don't divide by zero, then
+    # feature 2: retweet-to-follower ratio
+    # replace 0 followers with NA so we don't divide by zero, then
     # fill the resulting NaNs (from 0 followers OR missing data) with 0.
     safe_followers = df["Follower Count"].replace(0, pd.NA)
     df["retweet_follower_ratio"] = df["Retweet Count"] / safe_followers
@@ -35,7 +35,7 @@ def add_features(df: pd.DataFrame) -> pd.DataFrame:
 
 
 if __name__ == "__main__":
-    # Quick manual test — point this at your actual CSV once you have it.
+    # quick manual test — point this at your actual CSV once you have it.
     DATA_PATH = "bot_detection_data/bot_detection_data.csv"
 
     df = pd.read_csv(DATA_PATH)
