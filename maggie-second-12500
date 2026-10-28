@@ -1,0 +1,81 @@
+import pandas as pd
+import openai
+import time
+import os
+
+#loads main dataset CSV file and uses pandas.iloc[] to extract my assigned range of 12,500
+
+def load_and_slice_data(file_path, start_idx, end_idx):
+    print(f"Loading dataset from {file_path}...")
+    df = pd.read_csv(file_path)
+    
+    print(f"Extracting rows from index {start_idx} to {end_idx}...")
+    subset = df.iloc[start_idx:end_idx].copy()
+    return subset
+    
+#define initialize openai
+def initialize_openai_client():
+    api_key = os.getenv("OPENAI_API_KEY", "YOUR_API_KEY_HERE")
+    if api_key == "YOUR_API_KEY_HERE":
+        print("Reminder: Replace 'YOUR_API_KEY_HERE' with your active OpenAI key!")
+    return openai.OpenAI(api_key=api_key)
+
+#sends gibberish to gpt with a prompt to rewrite it into a realistic social media post 
+def generate_better_tweet(client, old_text):
+    prompt = f"Rewrite this gibberish bot text into a realistic sounding social media post or tweet: '{old_text}'"
+    
+    try:
+        response = client.chat.completions.create(
+            model="gpt-3.5-turbo", #3.5 turbo
+            messages=[{"role": "user", "content": prompt}],
+            max_tokens=60,
+            temperature=0.7
+        )
+        #grab just the text response and strip any extra whitespace
+        return response.choices[0].message.content.strip()
+    except Exception as e:
+        print(f"API Error encountered: {e}")
+        #if API fails, return original text so we don't lose data rows
+        return old_text
+#main function 
+def main():
+    input_file = "data/bot_detection_data.csv"
+    output_file = "data/maggie_second_12500_fixed.csv"
+    
+    # define boundaries
+    # the second 12500 dataset is mine 
+    start_idx = 12500
+    end_idx = 25000
+    text_column = "text"  # name of column containing tweet/bot texts
+
+    # used Google Gemini starting now 
+    #get our data slice
+    my_subset = load_and_slice_data(input_file, start_idx, end_idx)
+
+    #set up the OpenAI connection
+    client = initialize_openai_client()
+
+    print("Starting loop to replace gibberish text with LLM content...")
+    updated_texts = []
+
+    #iterate through every row in our subset
+    for idx, row in my_subset.iterrows():
+        original_text = row[text_column]
+        new_text = generate_better_tweet(client, original_text)
+        updated_texts.append(new_text)
+        
+        #Print status update every 100 rows so we know progress
+        if idx % 100 == 0:
+            print(f"Successfully processed row index {idx}...")
+            time.sleep(0.1)
+
+    #overwrite the old text column with our new cleaned list
+    my_subset[text_column] = updated_texts
+
+    #save our finished chunk to a new CSV file ready for GitHub
+    os.makedirs("data", exist_ok=True)
+    my_subset.to_csv(output_file, index=False)
+    print(f"Finished! Cleaned subset saved to {output_file}.")
+
+if __name__ == "__main__":
+    main()
